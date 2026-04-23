@@ -17,7 +17,7 @@ jobs:
       - name: Get latest upstream release
         id: upstream
         run: |
-          LATEST_TAG=$(curl -s https://api.github.com/repos/meshtastic/firmware/releases/latest | jq -r .tag_name)
+          LATEST_TAG=$(curl -s https://api.github.com/repos/meshtastic/firmware/tags | jq -r '.[].name' | grep -E '^v[0-9]' | sort -V | tail -n 1)
           echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
       - name: Checkout keepteen branch
@@ -87,7 +87,17 @@ jobs:
           
           # Erstellen der Release-Struktur
           mkdir -p release_assets
-          TAG="${{ needs.check-and-sync.outputs.tag }}"
+          FULL_NAME=$(ls .pio/build/keepteen_lt1/firmware*.uf2 | head -n 1)
+          FILE_NAME=$(basename $FULL_NAME)
+          # Extrahiert alles zwischen dem zweiten Bindestrich und .uf2
+          REAL_VERSION=$(echo $FILE_NAME | sed -E 's/firmware-keepteen_lt1-(.*)\.uf2/\1/')
+
+          echo "Verwendete Version: $REAL_VERSION"
+          echo "real_version=$REAL_VERSION" >> $GITHUB_OUTPUT
+
+        
+
+
           
           cp .pio/build/keepteen_lt1/firmware*.uf2 release_assets/
           cp .pio/build/keepteen_lt1/firmware*.zip release_assets/
@@ -99,7 +109,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.check-and-sync.outputs.tag }}-keepteen
+          tag_name: v${{ steps.build_step.outputs.real_version }}-keepteen
           name: "Keepteen Build: Meshtastic ${{ needs.check-and-sync.outputs.tag }}"
           body: "Automatic build for keepteen_lt1 based on Meshtastic ${{ needs.check-and-sync.outputs.tag }}"
           files: |
