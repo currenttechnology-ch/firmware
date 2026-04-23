@@ -89,20 +89,19 @@ jobs:
           mkdir -p release_assets
           TAG="${{ needs.check-and-sync.outputs.tag }}"
           
-          # UF2 Datei kopieren
-          cp .pio/build/keepteen_lt1/firmware.uf2 release_assets/meshtastic-${TAG}-keepteen_lt1.uf2
+          cp .pio/build/keepteen_lt1/firmware*.uf2 release_assets/
+          cp .pio/build/keepteen_lt1/firmware*.zip release_assets/
+
+          # Kontrolle im Log
+          ls -l release_assets/
           
-          # Zip erstellen
-          cd .pio/build/keepteen_lt1/
-          zip -r ../../../release_assets/meshtastic-${TAG}-keepteen_lt1.zip .
-          cd ../../../
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.check-and-sync.outputs.tag }}-keepteen
           name: "Keepteen Build: Meshtastic ${{ needs.check-and-sync.outputs.tag }}"
-          body: "Automatischer Build für keepteen_lt1 basierend auf Meshtastic ${{ needs.check-and-sync.outputs.tag }}"
+          body: "Automatic build for keepteen_lt1 based on Meshtastic ${{ needs.check-and-sync.outputs.tag }}"
           files: |
             release_assets/*.uf2
             release_assets/*.zip
