@@ -44,7 +44,11 @@ jobs:
           git config user.email "action@github.com"
           git remote add upstream https://github.com/meshtastic/firmware.git
           git fetch upstream --tags
-          git rebase ${{ steps.upstream.outputs.tag }}
+            # Wir stellen sicher, dass wir auf dem richtigen Branch sind
+          git checkout keepteen
+
+          # Wir versuchen den Merge.
+          git merge upstream/${{ steps.upstream.outputs.tag }} --no-edit -X theirs
           git push origin keepteen --force
 
   build:
