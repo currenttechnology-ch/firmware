@@ -48,7 +48,8 @@ jobs:
           git checkout keepteen
 
           # Wir versuchen den Merge.
-          git merge upstream/${{ steps.upstream.outputs.tag }} --no-edit -X theirs
+
+          git merge ${{ steps.upstream.outputs.tag }} --no-edit -X theirs
           git push origin keepteen --force
 
   build:
