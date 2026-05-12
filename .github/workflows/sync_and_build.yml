@@ -13,6 +13,7 @@ jobs:
       tag: ${{ steps.upstream.outputs.tag }}
     permissions:
       contents: write
+      workflows: write
     steps:
       - name: Get latest upstream release
         id: upstream
