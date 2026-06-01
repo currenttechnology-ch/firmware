@@ -13,7 +13,6 @@ jobs:
       tag: ${{ steps.upstream.outputs.tag }}
     permissions:
       contents: write
-      workflows: write
     steps:
       - name: Get latest upstream release
         id: upstream
@@ -26,6 +25,7 @@ jobs:
         with:
           ref: keepteen
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check if already built
         id: check
@@ -79,6 +79,7 @@ jobs:
           pio pkg install --environment keepteen_lt1
 
       - name: Build Device
+        id: build_step
         env:
           # Diese Variable zwingt PlatformIO, nur dieses Environment zu laden
           PLATFORMIO_DEFAULT_ENVS: keepteen_lt1
