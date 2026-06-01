@@ -48,9 +48,7 @@ jobs:
             # Wir stellen sicher, dass wir auf dem richtigen Branch sind
           git checkout keepteen
 
-          # Wir versuchen den Merge.
-
-          git merge ${{ steps.upstream.outputs.tag }} --no-edit -X theirs
+          git rebase ${{ steps.upstream.outputs.tag }}
           git push origin keepteen --force
 
   build:
