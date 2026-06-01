@@ -1,0 +1,109 @@
+name: Auto Sync and Build keepteen_lt1
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # Alle 6 Stunden prüfen
+  workflow_dispatch:      # Manueller Start möglich
+
+jobs:
+  check-and-sync:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+      tag: ${{ steps.upstream.outputs.tag }}
+    permissions:
+      contents: write
+    steps:
+      - name: Get latest upstream release
+        id: upstream
+        run: |
+          LATEST_TAG=$(curl -s https://api.github.com/repos/meshtastic/firmware/tags | jq -r '.[].name' | grep -E '^v[0-9]' | sort -V | tail -n 1)
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Checkout keepteen branch
+        uses: actions/checkout@v4
+        with:
+          ref: keepteen
+          fetch-depth: 0
+          # FEHLERBEHEBUNG 2: Nutzt das Token direkt für die Git-Authentifizierung
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if already built
+        id: check
+        run: |
+          MY_TAG="${{ steps.upstream.outputs.tag }}-keepteen"
+          EXISTS=$(curl -s -o /dev/null -w "%{http_code}" https://api.github.com/repos/${{ github.repository }}/releases/tags/$MY_TAG)
+          if [ "$EXISTS" = "200" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Sync and Rebase
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git remote add upstream https://github.com/meshtastic/firmware.git
+          git fetch upstream --tags
+          git checkout keepteen
+
+          git merge ${{ steps.upstream.outputs.tag }} --no-edit -X theirs
+          git push origin keepteen --force
+
+  build:
+    needs: check-and-sync
+    if: needs.check-and-sync.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout keepteen branch
+        uses: actions/checkout@v4
+        with:
+          ref: keepteen
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install PlatformIO
+        run: |
+          python3 -m pip install -U platformio
+          pio pkg install --environment keepteen_lt1
+
+      # FEHLERBEHEBUNG 1: Hier wurde "id: build_step" hinzugefügt!
+      - name: Build Device
+        id: build_step
+        env:
+          PLATFORMIO_DEFAULT_ENVS: keepteen_lt1
+        run: |
+          pio run -e keepteen_lt1
+          
+          mkdir -p release_assets
+          FULL_NAME=$(ls .pio/build/keepteen_lt1/firmware*.uf2 | head -n 1)
+          FILE_NAME=$(basename $FULL_NAME)
+          REAL_VERSION=$(echo $FILE_NAME | sed -E 's/firmware-keepteen_lt1-(.*)\.uf2/\1/')
+
+          echo "Verwendete Version: $REAL_VERSION"
+          echo "real_version=$REAL_VERSION" >> $GITHUB_OUTPUT
+          
+          cp .pio/build/keepteen_lt1/firmware*.uf2 release_assets/
+          cp .pio/build/keepteen_lt1/firmware*.zip release_assets/
+          ls -l release_assets/
+          
+
+      # Dieser Schritt funktioniert jetzt, da "steps.build_step.outputs" existiert
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.build_step.outputs.real_version }}-keepteen
+          name: "Keepteen Build: Meshtastic ${{ needs.check-and-sync.outputs.tag }}"
+          body: "Automatic build for keepteen_lt1 based on Meshtastic ${{ needs.check-and-sync.outputs.tag }}"
+          files: |
+            release_assets/*.uf2
+            release_assets/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

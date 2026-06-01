@@ -1,0 +1,48 @@
+name: Keepteen Sync and Build
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Läuft jede Nacht um 02:00 Uhr
+  workflow_dispatch:      # Ermöglicht manuellen Start per Mausklick
+
+jobs:
+  sync_and_build:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Deinen Code holen
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: keepteen
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # 2. Den originalen Meshtastic Code einmischen (Update)
+      - name: Update from Meshtastic Upstream
+        run: |
+          git config --global user.name "Bot"
+          git config --global user.email "bot@example.com"
+          git remote add upstream https://github.com/meshtastic/firmware.git
+          git fetch upstream
+          # Mergt das neueste "develop" in deinen "keepteen" Branch
+          git merge upstream/develop --no-edit || echo "Conflict detected - check manually"
+          git push origin keepteen
+
+      # 3. PlatformIO Build (Nur deine Hardware!)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build Keepteen Firmware
+        run: pio run -e keepteen_lt1
+
+      # 4. Die fertige Datei bereitstellen
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: keepteen-firmware-latest
+          path: .pio/build/keepteen_lt1/*.uf2
