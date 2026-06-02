@@ -197,6 +197,29 @@
         .btn-secondary:hover {
             background: #cbd5e1;
         }
+
+        /* Styling für die Update-Anleitung */
+        .instructions-card {
+            margin-top: 35px;
+            padding-top: 25px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .instructions-card h2 {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .instructions-card ol {
+            padding-left: 20px;
+            color: #4a5568;
+            font-size: 15px;
+        }
+
+        .instructions-card li {
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body>
@@ -237,6 +260,12 @@
                 <button id="download-zip" class="btn btn-secondary">Download .ZIP (Komplettpaket)</button>
             </div>
         </div>
+
+        <div class="instructions-card">
+            <h2 id="ui-instr-title">Updatevorgang:</h2>
+            <ol id="ui-instr-list">
+                </ol>
+        </div>
     </div>
 
     <script>
@@ -253,7 +282,16 @@
                 error: "Fehler beim Laden",
                 selectedPrefix: "Aktuell gewählt:",
                 groupStable: "Stabiler",
-                groupNew: "Neuer"
+                groupNew: "Neuer",
+                instrTitle: "Updatevorgang:",
+                steps: [
+                    "Gewünschte Firmware als uf2 runterladen",
+                    "Geräte per USB anhängen.",
+                    "Reset-Taste zweimal betätigen",
+                    "Ein neues Laufwerk wird sichtbar",
+                    "uf2 Datei auf neues Laufwerk kopieren",
+                    "Warten, das Gerät wird sich neu starten"
+                ]
             },
             en: {
                 title: "Keepteen LT1 Firmware",
@@ -264,7 +302,16 @@
                 error: "Error loading data",
                 selectedPrefix: "Currently selected:",
                 groupStable: "Stable",
-                groupNew: "New"
+                groupNew: "New",
+                instrTitle: "Update Process:",
+                steps: [
+                    "Download the desired firmware as a .uf2 file",
+                    "Connect the device via USB.",
+                    "Press the reset button twice",
+                    "A new drive will become visible",
+                    "Copy the .uf2 file onto the new drive",
+                    "Wait, the device will restart automatically"
+                ]
             },
             zh: {
                 title: "Keepteen LT1 固件下载",
@@ -275,7 +322,16 @@
                 error: "加载失败",
                 selectedPrefix: "当前选择：",
                 groupStable: "稳定版",
-                groupNew: "最新版"
+                groupNew: "最新版",
+                instrTitle: "升级步骤：",
+                steps: [
+                    "下载所需的 .uf2 格式固件文件",
+                    "通过 USB 连接设备。",
+                    "连续按两次复位 (Reset) 键",
+                    "电脑上会出现一个新的盘符",
+                    "将 .uf2 文件 inside/复制到新盘符中",
+                    "等待设备自动重新启动"
+                ]
             }
         };
 
@@ -297,6 +353,16 @@
             document.getElementById('ui-label-select').textContent = t.labelSelect;
             document.getElementById('ui-selected-prefix').textContent = t.selectedPrefix;
             document.getElementById('lang-select').value = currentLang;
+            
+            // Anleitung aktualisieren
+            document.getElementById('ui-instr-title').textContent = t.instrTitle;
+            const listContainer = document.getElementById('ui-instr-list');
+            listContainer.innerHTML = '';
+            t.steps.forEach(step => {
+                const li = document.createElement('li');
+                li.textContent = step;
+                listContainer.appendChild(li);
+            });
         }
 
         async function fetchReleases() {
