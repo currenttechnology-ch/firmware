@@ -109,7 +109,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.build_step.outputs.real_version }}-keepteen
+          #tag_name: v${{ steps.build_step.outputs.real_version }}-keepteen
+          tag_name: ${{ needs.check-and-sync.outputs.tag }}-keepteen
           name: "Keepteen Build: Meshtastic ${{ needs.check-and-sync.outputs.tag }}"
           body: "Automatic build for keepteen_lt1 based on Meshtastic ${{ needs.check-and-sync.outputs.tag }}"
           files: |
