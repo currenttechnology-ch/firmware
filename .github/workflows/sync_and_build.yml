@@ -16,8 +16,16 @@ jobs:
     steps:
       - name: Get latest upstream release
         id: upstream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LATEST_TAG=$(curl -s https://api.github.com/repos/meshtastic/firmware/tags | jq -r '.[].name' | grep -E '^v[0-9]' | sort -V | tail -n 1)
+          LATEST_TAG=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/meshtastic/firmware/tags | jq -r '.[].name' | grep -E '^v[0-9]' | sort -V | tail -n 1 | tr -d '\r\n')
+
+          # Sicherheitscheck: Falls die API down ist oder leer bleibt, brechen wir kontrolliert ab
+          if [ -z "$LATEST_TAG" ] || [ "$LATEST_TAG" = "null" ]; then
+            echo "Fehler: Konnte den Upstream-Tag nicht abrufen (Rate-Limit oder API-Fehler)."
+            exit 1
+          fi
           echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
       - name: Checkout keepteen branch
@@ -29,9 +37,11 @@ jobs:
 
       - name: Check if already built
         id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           MY_TAG="${{ steps.upstream.outputs.tag }}-keepteen"
-          EXISTS=$(curl -s -o /dev/null -w "%{http_code}" https://api.github.com/repos/${{ github.repository }}/releases/tags/$MY_TAG)
+          EXISTS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" -o /dev/null -w "%{http_code}" https://api.github.com/repos/${{ github.repository }}/releases/tags/$MY_TAG)
           if [ "$EXISTS" = "200" ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
           else
