@@ -13,6 +13,7 @@ jobs:
       tag: ${{ steps.upstream.outputs.tag }}
     permissions:
       contents: write
+      workflows: write
     steps:
       - name: Get latest upstream release
         id: upstream
@@ -67,6 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      workflows: write
     steps:
       - name: Checkout keepteen branch
         uses: actions/checkout@v4
