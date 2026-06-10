@@ -59,6 +59,8 @@ jobs:
           git checkout keepteen
 
           git rebase ${{ steps.upstream.outputs.tag }}
+          # Sicherstellen, dass wir keine fremden GitHub-Workflows pushen, die blockiert werden:
+          git checkout HEAD -- .github/workflows/ || true
           git push origin keepteen --force
 
   build:
