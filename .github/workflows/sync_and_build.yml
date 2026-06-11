@@ -13,6 +13,7 @@ jobs:
       tag: ${{ steps.upstream.outputs.tag }}
     permissions:
       contents: write
+      actions: write
     steps:
       - name: Get latest upstream release
         id: upstream
@@ -59,8 +60,6 @@ jobs:
           git checkout keepteen
 
           git rebase ${{ steps.upstream.outputs.tag }}
-          # Sicherstellen, dass wir keine fremden GitHub-Workflows pushen, die blockiert werden:
-          git checkout HEAD -- .github/workflows/ || true
           git push origin keepteen --force
 
   build:
@@ -69,6 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - name: Checkout keepteen branch
         uses: actions/checkout@v4
