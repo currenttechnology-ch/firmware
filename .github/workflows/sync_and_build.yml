@@ -58,7 +58,8 @@ jobs:
             # Wir stellen sicher, dass wir auf dem richtigen Branch sind
           git checkout keepteen
 
-          git rebase ${{ steps.upstream.outputs.tag }}
+          git merge ${{ steps.upstream.outputs.tag }} -X theirs --no-edit
+
           # 1. Lösche alle lokalen Workflows, die durch den Rebase reinkamen
           rm -rf .github/workflows/*
 
