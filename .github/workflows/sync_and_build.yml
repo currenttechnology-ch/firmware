@@ -57,8 +57,13 @@ jobs:
           git fetch upstream --tags -f
             # Wir stellen sicher, dass wir auf dem richtigen Branch sind
           git checkout keepteen
-
-          git merge ${{ steps.upstream.outputs.tag }} -X theirs --no-edit
+          git merge ${{ steps.upstream.outputs.tag }} -X theirs --no-edit || {
+            echo "Hartnäckige Konflikte gefunden – erzwinge Upstream-Zustand für Konfliktdateien..."
+            # Alle verbleibenden ungelösten Konflikte stur auf den Stand des Upstream-Tags setzen
+            git checkout ${{ steps.upstream.outputs.tag }} -- .
+            git add -A
+            git commit -m "Merge ${{ steps.upstream.outputs.tag }} with forced upstream conflict resolution"
+          }
 
           # 1. Lösche alle lokalen Workflows, die durch den Rebase reinkamen
           rm -rf .github/workflows/*
